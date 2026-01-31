@@ -516,9 +516,9 @@ function generateInfiniteWave(waveNumber) {
 // ======================================================
 
 const BARRICADE_TYPES = {
-  small: { hp: 70, size: 20, cost: 40 },
-  large: { hp: 180, size: 40, cost: 120 },
-  tank:  { hp: 350, size: 50, cost: 220 }
+  small: { hp: 70, size: 20, cost: 20 },
+  large: { hp: 180, size: 40, cost: 70 },
+  tank:  { hp: 350, size: 50, cost: 175 }
 };
 
 function placeBarricade(x, y, type) {
