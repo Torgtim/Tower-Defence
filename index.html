@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="UTF-8">
-  <title>Torgrim Defense</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Torgrim Defense: Ultimate Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     html, body {
@@ -19,83 +19,38 @@
       display: block;
       margin: 0 auto;
       background: #11161d;
+      box-shadow: 0 0 40px #000;
     }
 
+    /* Top info bar */
     #topBar {
       position: fixed;
       top: 10px;
       left: 10px;
-      background: #0008;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 10;
+      background: rgba(0,0,0,0.45);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 10px #000;
+      z-index: 20;
     }
 
-    #startWaveBtn {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 20px;
-      background: #28a745;
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 10;
-      display: none;
-    }
-
-    #startWaveBtn:hover {
-      background: #2ec653;
-    }
-
-    /* Tårn-meny */
-    #towerMenu {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      background: #0008;
-      padding: 10px;
-      border-radius: 8px;
-      z-index: 11;
-    }
-
-    #towerMenu button {
-      margin: 4px;
-      padding: 8px 12px;
-      background: #333;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    #towerMenu button:hover {
-      background: #555;
-    }
-
-    #towerMenu button.selected {
-      background: #1976d2;
-    }
-
-    /* Fortnite-aktig HP-bar */
+    /* Fortnite-style HP bar */
     #playerHpContainer {
       position: fixed;
       top: 60px;
       left: 10px;
-      width: 220px;
-      height: 26px;
+      width: 240px;
+      height: 28px;
       background: rgba(0, 0, 0, 0.35);
       border-radius: 14px;
       padding: 3px;
-      box-shadow: 0 0 10px #00aaff88;
+      box-shadow: 0 0 12px #00aaff88;
       display: flex;
       align-items: center;
       z-index: 20;
+      backdrop-filter: blur(4px);
     }
 
     #playerHpBar {
@@ -109,11 +64,159 @@
 
     #playerHpText {
       position: absolute;
-      width: 220px;
+      width: 240px;
       text-align: center;
       font-weight: bold;
-      font-size: 13px;
+      font-size: 14px;
       text-shadow: 0 0 4px #000;
+    }
+
+    /* Tower menu */
+    #towerMenu {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.45);
+      padding: 12px;
+      border-radius: 10px;
+      z-index: 20;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 10px #000;
+    }
+
+    #towerMenu button {
+      margin: 4px;
+      padding: 8px 14px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.15s;
+    }
+
+    #towerMenu button:hover {
+      background: #555;
+      transform: translateY(-2px);
+    }
+
+    #towerMenu button.selected {
+      background: #1976d2;
+      box-shadow: 0 0 10px #1976d2;
+    }
+
+    /* Barricade menu */
+    #barricadeMenu {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.45);
+      padding: 12px;
+      border-radius: 10px;
+      z-index: 20;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 10px #000;
+    }
+
+    #barricadeMenu button {
+      margin: 4px;
+      padding: 8px 14px;
+      background: #553333;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.15s;
+    }
+
+    #barricadeMenu button:hover {
+      background: #774444;
+      transform: translateY(-2px);
+    }
+
+    #barricadeMenu button.selected {
+      background: #aa4444;
+      box-shadow: 0 0 10px #aa4444;
+    }
+
+    /* Start wave button */
+    #startWaveBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 24px;
+      background: #28a745;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 20;
+      display: none;
+      box-shadow: 0 0 12px #000;
+      transition: 0.2s;
+    }
+
+    #startWaveBtn:hover {
+      background: #2ec653;
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    /* GAME OVER SCREEN */
+    #gameOverScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(6px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 999;
+      color: #ff4444;
+      text-shadow: 0 0 20px #ff0000;
+      animation: fadeIn 1.2s ease-out forwards;
+    }
+
+    #gameOverScreen h1 {
+      font-size: 70px;
+      margin-bottom: 20px;
+      letter-spacing: 4px;
+    }
+
+    #gameOverScreen p {
+      font-size: 22px;
+      margin: 6px 0;
+      color: #ddd;
+      text-shadow: none;
+    }
+
+    #restartBtn {
+      margin-top: 30px;
+      padding: 14px 28px;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #444;
+      color: white;
+      transition: 0.2s;
+    }
+
+    #restartBtn:hover {
+      background: #666;
+      transform: scale(1.1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
   </style>
 </head>
@@ -123,16 +226,8 @@
   <canvas id="gameCanvas" width="900" height="600"></canvas>
 
   <div id="topBar">
-    Bølge: <span id="waveText">1</span> |
-    Penger: <span id="moneyText">100</span>
-  </div>
-
-  <button id="startWaveBtn">Start neste bølge</button>
-
-  <div id="towerMenu">
-    <button data-tower="rifle">Rifle</button>
-    <button data-tower="shotgun">Shotgun</button>
-    <button data-tower="freeze">Freeze</button>
+    Wave: <span id="waveText">1</span> |
+    Money: <span id="moneyText">100</span>
   </div>
 
   <div id="playerHpContainer">
@@ -140,815 +235,31 @@
     <span id="playerHpText">50 / 50</span>
   </div>
 
-  <script>
-    // ---------------------------
-    // Grunnvariabler
-    // ---------------------------
-    let currentWaveIndex = 0;
-    let isWaveRunning = false;
-    let isBetweenWaves = true;
-    let enemies = [];
-    let money = 100;
-
-    let pendingSpawns = [];
-    let spawnTimer = 0;
-
-    let barricades = [];
-    let towers = [];
-    let unlockedTowers = ["rifle", "shotgun", "freeze"];
-
-    let bullets = [];
-    let selectedTowerType = null;
-
-    let playerHealth = 50;
-    let maxHealth = 50;
-
-    // FORTSETTELSE HER: Canvas + UI
-
-    // ---------------------------
-    // Canvas + UI
-    // ---------------------------
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const waveText = document.getElementById("waveText");
-    const moneyText = document.getElementById("moneyText");
-    const startWaveBtn = document.getElementById("startWaveBtn");
-    const towerMenu = document.getElementById("towerMenu");
-    const playerHpBar = document.getElementById("playerHpBar");
-    const playerHpText = document.getElementById("playerHpText");
-
-    function resizeCanvas() {
-      const scale = Math.min(
-        window.innerWidth / 900,
-        window.innerHeight / 600
-      );
-      canvas.style.transform = `scale(${scale})`;
-      canvas.style.transformOrigin = "top left";
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    function updatePlayerHpUI() {
-      const ratio = Math.max(0, playerHealth / maxHealth);
-      playerHpBar.style.width = (ratio * 100) + "%";
-      playerHpText.textContent = `${playerHealth} / ${maxHealth}`;
-    }
-    updatePlayerHpUI();
-
-    function damagePlayer(amount) {
-      playerHealth -= amount;
-      if (playerHealth < 0) playerHealth = 0;
-      updatePlayerHpUI();
-
-      if (playerHealth <= 0) {
-        alert("GAME OVER! Du ble overkjørt av slemmingene 😈");
-        location.reload();
-      }
-    }
-
-    // FORTSETTELSE HER: Waves + fiende-stats
-
-    // ---------------------------
-    // Waves
-    // ---------------------------
-    const waves = [
-      {
-        id: 1,
-        enemies: [{ type: "grunt", count: 8, interval: 800 }],
-        reward: 40,
-        unlocks: ["rifle", "shotgun", "freeze"]
-      },
-      {
-        id: 2,
-        enemies: [{ type: "grunt", count: 10, interval: 700 }],
-        reward: 45,
-        unlocks: []
-      },
-      {
-        id: 3,
-        enemies: [
-          { type: "grunt", count: 10, interval: 650 },
-          { type: "runner", count: 3, interval: 900 }
-        ],
-        reward: 55,
-        unlocks: []
-      },
-      {
-        id: 4,
-        enemies: [
-          { type: "grunt", count: 12, interval: 600 },
-          { type: "runner", count: 4, interval: 850 }
-        ],
-        reward: 70,
-        unlocks: []
-      },
-      {
-        id: 5,
-        enemies: [
-          { type: "grunt", count: 14, interval: 550 },
-          { type: "runner", count: 5, interval: 800 },
-          { type: "tank", count: 1, interval: 0 }
-        ],
-        reward: 90,
-        unlocks: []
-      },
-      {
-        id: 6,
-        enemies: [
-          { type: "swarm", count: 20, interval: 220 },
-          { type: "grunt", count: 10, interval: 600 }
-        ],
-        reward: 100,
-        unlocks: []
-      },
-      {
-        id: 7,
-        enemies: [
-          { type: "runner", count: 8, interval: 750 },
-          { type: "grunt", count: 16, interval: 550 }
-        ],
-        reward: 120,
-        unlocks: []
-      },
-      {
-        id: 8,
-        enemies: [
-          { type: "tank", count: 2, interval: 0 },
-          { type: "grunt", count: 18, interval: 500 }
-        ],
-        reward: 150,
-        unlocks: []
-      },
-      {
-        id: 9,
-        enemies: [
-          { type: "swarm", count: 30, interval: 180 },
-          { type: "runner", count: 8, interval: 700 }
-        ],
-        reward: 180,
-        unlocks: []
-      },
-      {
-        id: 10,
-        enemies: [
-          { type: "tank", count: 3, interval: 0 },
-          { type: "grunt", count: 22, interval: 480 }
-        ],
-        reward: 250,
-        unlocks: []
-      }
-    ];
-
-    // ---------------------------
-    // Enemy stats
-    // ---------------------------
-    function getEnemyBaseHp(type) {
-      switch (type) {
-        case "grunt": return 30;
-        case "runner": return 22;
-        case "tank": return 160;
-        case "swarm": return 12;
-        default: return 30;
-      }
-    }
-
-    function getEnemyBaseSpeed(type) {
-      switch (type) {
-        case "grunt": return 1.0;
-        case "runner": return 1.9;
-        case "tank": return 0.6;
-        case "swarm": return 1.5;
-        default: return 1.0;
-      }
-    }
-
-    function getEnemyColor(type) {
-      switch (type) {
-        case "grunt": return "#4caf50";
-        case "runner": return "#ff9800";
-        case "tank": return "#f44336";
-        case "swarm": return "#9c27b0";
-        default: return "#fff";
-      }
-    }
-
-    function getEnemyDamage(type) {
-      switch (type) {
-        case "tank": return 3;
-        case "runner": return 2;
-        case "swarm": return 1;
-        case "grunt": return 1;
-        default: return 1;
-      }
-    }
-
-    // FORTSETTELSE HER: Paths + pathfinding
-
-    // ---------------------------
-    // Paths
-    // ---------------------------
-    const mainPath = [
-      { x: 0,   y: 300 },
-      { x: 200, y: 300 },
-      { x: 350, y: 200 },
-      { x: 500, y: 200 },
-      { x: 650, y: 350 },
-      { x: 800, y: 350 },
-      { x: 900, y: 300 }
-    ];
-
-    const sidePaths = [
-      [
-        { x: 200, y: 300 },
-        { x: 250, y: 400 },
-        { x: 350, y: 400 },
-        { x: 500, y: 300 }
-      ],
-      [
-        { x: 500, y: 200 },
-        { x: 550, y: 100 },
-        { x: 700, y: 150 },
-        { x: 800, y: 300 }
-      ]
-    ];
-
-    function distancePointToSegment(px, py, x1, y1, x2, y2) {
-      const A = px - x1;
-      const B = py - y1;
-      const C = x2 - x1;
-      const D = y2 - y1;
-
-      const dot = A * C + B * D;
-      const lenSq = C * C + D * D;
-      let t = -1;
-
-      if (lenSq !== 0) t = dot / lenSq;
-      if (t < 0) return Math.hypot(px - x1, py - y1);
-      if (t > 1) return Math.hypot(px - x2, py - y2);
-
-      const projX = x1 + t * C;
-      const projY = y1 + t * D;
-
-      return Math.hypot(px - projX, py - projY);
-    }
-
-    function isSegmentBlocked(x1, y1, x2, y2) {
-      for (const b of barricades) {
-        const dist = distancePointToSegment(b.x, b.y, x1, y1, x2, y2);
-        if (dist < b.size) return true;
-      }
-      return false;
-    }
-
-    function isPathBlocked(path) {
-      for (let i = 0; i < path.length - 1; i++) {
-        const p1 = path[i];
-        const p2 = path[i + 1];
-        if (isSegmentBlocked(p1.x, p1.y, p2.x, p2.y)) return true;
-      }
-      return false;
-    }
-
-    function choosePathForEnemy(enemy) {
-      if (!isPathBlocked(mainPath)) {
-        enemy.path = mainPath;
-        enemy.pathIndex = 0;
-        return;
-      }
-      for (const sp of sidePaths) {
-        if (!isPathBlocked(sp)) {
-          enemy.path = sp;
-          enemy.pathIndex = 0;
-          return;
-        }
-      }
-      enemy.path = mainPath;
-      enemy.pathIndex = 0;
-      enemy.forceBreak = true;
-    }
-
-    function getNextPathPoint(enemy) {
-      const path = enemy.path;
-      const index = enemy.pathIndex;
-      if (!path || index >= path.length - 1) return null;
-      return path[index + 1];
-    }
-
-    function assignPathToEnemy(enemy) {
-      choosePathForEnemy(enemy);
-      enemy.x = enemy.path[0].x;
-      enemy.y = enemy.path[0].y;
-    }
-
-    function updateEnemyMovement(enemy, dt) {
-      const next = getNextPathPoint(enemy);
-      if (!next) {
-        enemy.alive = false;
-        const dmg = getEnemyDamage(enemy.type);
-        damagePlayer(dmg);
-        return;
-      }
-
-      const dx = next.x - enemy.x;
-      const dy = next.y - enemy.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-
-      if (dist < 1) {
-        enemy.pathIndex++;
-        return;
-      }
-
-      const speed = enemy.speed * 0.1 * dt;
-      enemy.x += (dx / dist) * speed;
-      enemy.y += (dy / dist) * speed;
-    }
-
-    // FORTSETTELSE HER: Barrikader
-
-    // ---------------------------
-    // Barrikader
-    // ---------------------------
-    const BARRICADE_TYPES = {
-      small: { hp: 60, size: 20, blocks: true, cost: 40 },
-      large: { hp: 180, size: 40, blocks: true, cost: 120 }
-    };
-
-    function placeBarricade(x, y, type) {
-      const data = BARRICADE_TYPES[type];
-      if (!data) return;
-      if (money < data.cost) return;
-
-      barricades.push({
-        x,
-        y,
-        hp: data.hp,
-        size: data.size,
-        type,
-        blocks: data.blocks
-      });
-
-      money -= data.cost;
-    }
-
-    function drawBarricades() {
-      for (const b of barricades) {
-        ctx.fillStyle = b.type === "small" ? "#ffaa00" : "#ff4444";
-        ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
-      }
-    }
-
-    function enemyHitsBarricade(enemy, barricade) {
-      const dx = enemy.x - barricade.x;
-      const dy = enemy.y - barricade.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      return dist < barricade.size;
-    }
-
-    function updateEnemyBarricadeInteraction(enemy, dt) {
-      for (let i = barricades.length - 1; i >= 0; i--) {
-        const b = barricades[i];
-
-        if (enemyHitsBarricade(enemy, b)) {
-          if (enemy.forceBreak) b.hp -= 0.3 * dt;
-          if (enemy.type === "tank") b.hp -= 0.25 * dt;
-          if (!enemy.forceBreak && enemy.type !== "tank") b.hp -= 0.1 * dt;
-
-          if (b.hp <= 0) {
-            barricades.splice(i, 1);
-            choosePathForEnemy(enemy);
-          }
-
-          enemy.speed = 0.2;
-          return;
-        }
-      }
-      enemy.speed = getEnemyBaseSpeed(enemy.type);
-    }
-
-    // FORTSETTELSE HER: Tårn + oppgraderinger
-
-    // ---------------------------
-    // Tårn
-    // ---------------------------
-    const TOWER_TYPES = {
-      rifle: {
-        name: "Rifle Tower",
-        range: 130,
-        damage: 9,
-        fireRate: 550,
-        cost: 55,
-        color: "#4fc3f7"
-      },
-      shotgun: {
-        name: "Shotgun Tower",
-        range: 85,
-        damage: 20,
-        fireRate: 900,
-        cost: 80,
-        color: "#ffb74d"
-      },
-      freeze: {
-        name: "Freeze Tower",
-        range: 110,
-        damage: 3,
-        fireRate: 500,
-        cost: 75,
-        color: "#80deea",
-        slowFactor: 0.4,
-        slowDuration: 1200
-      }
-    };
-
-    function selectTower(type) {
-      selectedTowerType = type;
-
-      const buttons = towerMenu.querySelectorAll("button");
-      buttons.forEach(btn => {
-        if (btn.dataset.tower === type) {
-          btn.classList.add("selected");
-        } else {
-          btn.classList.remove("selected");
-        }
-      });
-    }
-
-    towerMenu.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      const type = btn.dataset.tower;
-      if (!type) return;
-      selectTower(type);
-    });
-
-    canvas.addEventListener("click", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
-
-      // Sjekk først om vi traff et tårn → oppgrader
-      const clickedTower = towers.find(t => {
-        const dx = t.x - x;
-        const dy = t.y - y;
-        return Math.sqrt(dx*dx + dy*dy) <= 14;
-      });
-
-      if (clickedTower) {
-        upgradeTower(clickedTower);
-        return;
-      }
-
-      // Hvis ikke tårn, plasser nytt hvis valgt
-      if (!selectedTowerType) return;
-      placeTower(x, y, selectedTowerType);
-    });
-
-    function placeTower(x, y, type) {
-      if (!unlockedTowers.includes(type)) return;
-      const data = TOWER_TYPES[type];
-      if (!data) return;
-      if (money < data.cost) return;
-
-      towers.push({
-        x,
-        y,
-        type,
-        range: data.range,
-        damage: data.damage,
-        fireRate: data.fireRate,
-        lastShot: 0,
-        slowFactor: data.slowFactor || null,
-        slowDuration: data.slowDuration || null,
-        level: 1
-      });
-
-      money -= data.cost;
-    }
-
-    function upgradeTower(tower) {
-      if (tower.level >= 3) return;
-      const upgradeCost = 40 + tower.level * 30;
-      if (money < upgradeCost) return;
-
-      tower.level++;
-      tower.damage *= 1.3;
-      tower.range *= 1.15;
-      tower.fireRate *= 0.85;
-
-      money -= upgradeCost;
-    }
-
-    function applySlowEffect(enemy, factor, duration) {
-      // abilities: runners mindre påvirket, swarm mer
-      if (enemy.type === "runner") {
-        factor = 1 - (1 - factor) * 0.5;
-      } else if (enemy.type === "swarm") {
-        factor = 1 - (1 - factor) * 1.5;
-        if (factor < 0.2) factor = 0.2;
-      }
-
-      if (!enemy.slow) {
-        enemy.slow = { factor, remaining: duration };
-      } else {
-        enemy.slow.factor = factor;
-        enemy.slow.remaining = duration;
-      }
-    }
-
-    function updateTowers(dt) {
-      for (const t of towers) {
-        t.lastShot += dt;
-        const data = TOWER_TYPES[t.type];
-        if (!data) continue;
-        if (t.lastShot < t.fireRate) continue;
-
-        let target = null;
-        let closestDist = Infinity;
-
-        for (const e of enemies) {
-          const dx = e.x - t.x;
-          const dy = e.y - t.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist <= t.range && dist < closestDist) {
-            closestDist = dist;
-            target = e;
-          }
-        }
-
-        if (target) {
-          // skade (tank tar mindre)
-          let dmg = t.damage;
-          if (target.type === "tank") {
-            dmg *= 0.6;
-          }
-          target.hp -= dmg;
-
-          // slow
-          if (t.slowFactor && t.slowDuration) {
-            applySlowEffect(target, t.slowFactor, t.slowDuration);
-          }
-
-          if (target.hp <= 0) {
-            target.alive = false;
-            money += 6;
-          }
-
-          // visuelt skudd
-          bullets.push({
-            x: t.x,
-            y: t.y,
-            target: target,
-            speed: 0.6
-          });
-
-          t.lastShot = 0;
-        }
-      }
-    }
-
-    function drawTowers() {
-      for (const t of towers) {
-        const data = TOWER_TYPES[t.type];
-        ctx.fillStyle = data ? data.color : "#ffffff";
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, 12 + (t.level - 1) * 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = "rgba(255,255,255,0.08)";
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // level-tekst
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "10px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("L" + t.level, t.x, t.y + 3);
-      }
-    }
-
-    // FORTSETTELSE HER: Bullets
-
-    // ---------------------------
-    // Bullets
-    // ---------------------------
-    function updateBullets(dt) {
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        const e = b.target;
-
-        if (!e || !e.alive) {
-          bullets.splice(i, 1);
-          continue;
-        }
-
-        const dx = e.x - b.x;
-        const dy = e.y - b.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-
-        if (dist < 5) {
-          bullets.splice(i, 1);
-          continue;
-        }
-
-        const speed = b.speed * dt;
-        b.x += (dx / dist) * speed;
-        b.y += (dy / dist) * speed;
-      }
-    }
-
-    function drawBullets() {
-      for (const b of bullets) {
-        if (!b.target || !b.target.alive) continue;
-        ctx.strokeStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.moveTo(b.x, b.y);
-        ctx.lineTo(b.target.x, b.target.y);
-        ctx.stroke();
-      }
-    }
-
-    // FORTSETTELSE HER: Wave-system
-
-    // ---------------------------
-    // Wave system
-    // ---------------------------
-    function startWave() {
-      if (isWaveRunning) return;
-      if (currentWaveIndex >= waves.length) {
-        console.log("Ingen flere bølger.");
-        return;
-      }
-
-      const wave = waves[currentWaveIndex];
-      console.log("Starter bølge:", wave.id);
-
-      isWaveRunning = true;
-      isBetweenWaves = false;
-
-      pendingSpawns = [];
-      for (const group of wave.enemies) {
-        for (let i = 0; i < group.count; i++) {
-          pendingSpawns.push({
-            type: group.type,
-            interval: group.interval
-          });
-        }
-      }
-      pendingSpawns.sort(() => Math.random() - 0.5);
-      spawnTimer = 0;
-    }
-
-    function spawnEnemy(type) {
-      const enemy = {
-        type,
-        hp: getEnemyBaseHp(type),
-        maxHp: getEnemyBaseHp(type),
-        speed: getEnemyBaseSpeed(type),
-        alive: true,
-        path: null,
-        pathIndex: 0,
-        x: 0,
-        y: 0,
-        slow: null,
-        forceBreak: false
-      };
-      assignPathToEnemy(enemy);
-      enemies.push(enemy);
-    }
-
-    function updateWaveSystem(dt) {
-      if (!isWaveRunning) return;
-
-      if (pendingSpawns.length > 0) {
-        spawnTimer -= dt;
-        if (spawnTimer <= 0) {
-          const next = pendingSpawns.shift();
-          spawnEnemy(next.type);
-          spawnTimer = next.interval;
-        }
-      }
-
-      if (pendingSpawns.length === 0 && enemies.length === 0) {
-        endWave();
-      }
-    }
-
-    function endWave() {
-      const wave = waves[currentWaveIndex];
-      console.log("Bølge ferdig:", wave.id);
-
-      isWaveRunning = false;
-      isBetweenWaves = true;
-
-      money += wave.reward;
-
-      if (wave.unlocks && wave.unlocks.length > 0) {
-        for (const t of wave.unlocks) {
-          if (!unlockedTowers.includes(t)) {
-            unlockedTowers.push(t);
-          }
-        }
-      }
-
-      currentWaveIndex++;
-    }
-
-    startWaveBtn.addEventListener("click", () => {
-      startWave();
-    });
-
-    // FORTSETTELSE HER: Update + draw + game loop
-
-    // ---------------------------
-    // Update + draw
-    // ---------------------------
-    function updateEnemies(dt) {
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
-
-        if (!e.alive) {
-          enemies.splice(i, 1);
-          continue;
-        }
-
-        if (e.slow) {
-          e.slow.remaining -= dt;
-          if (e.slow.remaining <= 0) e.slow = null;
-        }
-
-        let baseSpeed = getEnemyBaseSpeed(e.type);
-        if (e.slow) baseSpeed *= e.slow.factor;
-        e.speed = baseSpeed;
-
-        updateEnemyBarricadeInteraction(e, dt);
-        updateEnemyMovement(e, dt);
-      }
-    }
-
-    function update(dt) {
-      updateWaveSystem(dt);
-      updateEnemies(dt);
-      updateTowers(dt);
-      updateBullets(dt);
-
-      waveText.textContent = currentWaveIndex + 1;
-      moneyText.textContent = money;
-      startWaveBtn.style.display = isBetweenWaves ? "block" : "none";
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // fiender
-      for (const e of enemies) {
-        // kropp
-        ctx.fillStyle = getEnemyColor(e.type);
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, 12, 0, Math.PI * 2);
-        ctx.fill();
-
-        // HP-bar
-        const barWidth = 26;
-        const barHeight = 4;
-        const hpRatio = Math.max(0, e.hp / e.maxHp);
-        const barX = e.x - barWidth / 2;
-        const barY = e.y - 20;
-
-        ctx.fillStyle = "#333";
-        ctx.fillRect(barX, barY, barWidth, barHeight);
-
-        ctx.fillStyle = "#4caf50";
-        ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
-
-        // name tag
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "10px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(e.type, e.x, barY - 3);
-      }
-
-      drawBarricades();
-      drawTowers();
-      drawBullets();
-    }
-
-    // ---------------------------
-    // Game loop
-    // ---------------------------
-    let lastTime = 0;
-    function gameLoop(timestamp) {
-      const dt = timestamp - lastTime;
-      lastTime = timestamp;
-
-      update(dt);
-      draw();
-
-      requestAnimationFrame(gameLoop);
-    }
-    requestAnimationFrame(gameLoop);
-  </script>
+  <div id="towerMenu">
+    <button data-tower="rifle">Rifle</button>
+    <button data-tower="shotgun">Shotgun</button>
+    <button data-tower="freeze">Freeze</button>
+  </div>
+
+  <div id="barricadeMenu">
+    <button data-barricade="small">Small</button>
+    <button data-barricade="large">Large</button>
+    <button data-barricade="tank">Tank Wall</button>
+  </div>
+
+  <button id="startWaveBtn">Start Next Wave</button>
+
+  <!-- GAME OVER SCREEN -->
+  <div id="gameOverScreen">
+    <h1>YOU DIED</h1>
+    <p id="goWave"></p>
+    <p id="goKills"></p>
+    <p id="goSpent"></p>
+    <button id="restartBtn">Play Again</button>
+  </div>
+
+  <!-- Load the game logic -->
+  <script src="game.js"></script>
 
 </body>
 </html>
