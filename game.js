@@ -1101,7 +1101,7 @@ function gameLoop(timestamp) {
 }
 
 requestAnimationFrame(gameLoop);
-
+}
 
 // ======================================================
 //  CANVAS CLICK HANDLING (TÅRN + BARRIKADER + OPPGRADERING)
