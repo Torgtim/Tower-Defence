@@ -129,6 +129,38 @@ towerMenu.addEventListener("click", (e) => {
   btn.classList.add("selected");
 });
 
+//skulle legge til:
+// ======================================================
+//  ENEMY VS BARRICADE INTERACTION
+// ======================================================
+
+function updateEnemyBarricadeInteraction(enemy, dt) {
+  for (let i = barricades.length - 1; i >= 0; i--) {
+    const b = barricades[i];
+
+    const dx = enemy.x - b.x;
+    const dy = enemy.y - b.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Hvis fienden treffer barrikaden
+    if (dist < b.size + 10) {
+
+      // Fienden gjør skade på barrikaden
+      b.hp -= getEnemyDamage(enemy.type) * 0.05 * dt;
+
+      // Hvis barrikaden ødelegges
+      if (b.hp <= 0) {
+        barricades.splice(i, 1);
+      }
+
+      // Fienden stopper litt opp
+      enemy.speed *= 0.4;
+      return;
+    }
+  }
+}
+
+
 // ---------------------------
 // Menyvalg — Barrikader
 // ---------------------------
