@@ -51,6 +51,36 @@
     #startWaveBtn:hover {
       background: #2ec653;
     }
+
+    /* Tårn-meny */
+    #towerMenu {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: #0008;
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 11;
+    }
+
+    #towerMenu button {
+      margin: 4px;
+      padding: 8px 12px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    #towerMenu button:hover {
+      background: #555;
+    }
+
+    #towerMenu button.selected {
+      background: #1976d2;
+    }
   </style>
 </head>
 
@@ -64,6 +94,12 @@
   </div>
 
   <button id="startWaveBtn">Start neste bølge</button>
+
+  <div id="towerMenu">
+    <button data-tower="rifle">Rifle</button>
+    <button data-tower="shotgun">Shotgun</button>
+    <button data-tower="freeze">Freeze</button>
+  </div>
 
   <script>
     // ---------------------------
@@ -82,6 +118,9 @@
     let towers = [];
     let unlockedTowers = ["rifle", "shotgun", "freeze"];
 
+    let bullets = [];
+    let selectedTowerType = null;
+
     // ---------------------------
     // Canvas + UI
     // ---------------------------
@@ -90,6 +129,7 @@
     const waveText = document.getElementById("waveText");
     const moneyText = document.getElementById("moneyText");
     const startWaveBtn = document.getElementById("startWaveBtn");
+    const towerMenu = document.getElementById("towerMenu");
 
     function resizeCanvas() {
       const scale = Math.min(
@@ -435,14 +475,37 @@
       }
     };
 
+    function selectTower(type) {
+      selectedTowerType = type;
+
+      const buttons = towerMenu.querySelectorAll("button");
+      buttons.forEach(btn => {
+        if (btn.dataset.tower === type) {
+          btn.classList.add("selected");
+        } else {
+          btn.classList.remove("selected");
+        }
+      });
+    }
+
+    towerMenu.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const type = btn.dataset.tower;
+      if (!type) return;
+      selectTower(type);
+    });
+
     canvas.addEventListener("click", (e) => {
+      if (!selectedTowerType) return;
+
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       const x = (e.clientX - rect.left) * scaleX;
       const y = (e.clientY - rect.top) * scaleY;
 
-      placeTower(x, y, "rifle");
+      placeTower(x, y, selectedTowerType);
     });
 
     function placeTower(x, y, type) {
@@ -496,8 +559,10 @@
         }
 
         if (target) {
+          // skade
           target.hp -= t.damage;
 
+          // slow
           if (t.slowFactor && t.slowDuration) {
             applySlowEffect(target, t.slowFactor, t.slowDuration);
           }
@@ -506,6 +571,14 @@
             target.alive = false;
             money += 5;
           }
+
+          // visuelt skudd
+          bullets.push({
+            x: t.x,
+            y: t.y,
+            target: target,
+            speed: 0.6
+          });
 
           t.lastShot = 0;
         }
@@ -523,6 +596,45 @@
         ctx.strokeStyle = "rgba(255,255,255,0.08)";
         ctx.beginPath();
         ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // ---------------------------
+    // Bullets
+    // ---------------------------
+    function updateBullets(dt) {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        const e = b.target;
+
+        if (!e || !e.alive) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        const dx = e.x - b.x;
+        const dy = e.y - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist < 5) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        const speed = b.speed * dt;
+        b.x += (dx / dist) * speed;
+        b.y += (dy / dist) * speed;
+      }
+    }
+
+    function drawBullets() {
+      for (const b of bullets) {
+        if (!b.target || !b.target.alive) continue;
+        ctx.strokeStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.target.x, b.target.y);
         ctx.stroke();
       }
     }
@@ -560,6 +672,7 @@
       const enemy = {
         type,
         hp: getEnemyBaseHp(type),
+        maxHp: getEnemyBaseHp(type),
         speed: getEnemyBaseSpeed(type),
         alive: true,
         path: null,
@@ -644,6 +757,7 @@
       updateWaveSystem(dt);
       updateEnemies(dt);
       updateTowers(dt);
+      updateBullets(dt);
 
       waveText.textContent = currentWaveIndex + 1;
       moneyText.textContent = money;
@@ -653,15 +767,37 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // fiender
       for (const e of enemies) {
+        // kropp
         ctx.fillStyle = getEnemyColor(e.type);
         ctx.beginPath();
         ctx.arc(e.x, e.y, 12, 0, Math.PI * 2);
         ctx.fill();
+
+        // HP-bar
+        const barWidth = 26;
+        const barHeight = 4;
+        const hpRatio = Math.max(0, e.hp / e.maxHp);
+        const barX = e.x - barWidth / 2;
+        const barY = e.y - 20;
+
+        ctx.fillStyle = "#333";
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+
+        ctx.fillStyle = "#4caf50";
+        ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+
+        // name tag
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(e.type, e.x, barY - 3);
       }
 
       drawBarricades();
       drawTowers();
+      drawBullets();
     }
 
     // ---------------------------
