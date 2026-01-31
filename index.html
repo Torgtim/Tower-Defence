@@ -21,7 +21,6 @@
       background: #11161d;
     }
 
-    /* UI-topplinje */
     #topBar {
       position: fixed;
       top: 10px;
@@ -33,7 +32,6 @@
       z-index: 10;
     }
 
-    /* Start neste bølge-knapp */
     #startWaveBtn {
       position: fixed;
       bottom: 20px;
@@ -68,740 +66,618 @@
   <button id="startWaveBtn">Start neste bølge</button>
 
   <script>
-    // fortsettelse her:
-    // TORGRIM DEFENSE – Canvas + Game Loop (DEL 2)
+    // ---------------------------
+    // Grunnvariabler
+    // ---------------------------
+    let currentWaveIndex = 0;
+    let isWaveRunning = false;
+    let isBetweenWaves = true;
+    let enemies = [];
+    let money = 100;
 
-// Hent canvas
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+    let pendingSpawns = [];
+    let spawnTimer = 0;
 
-// UI-elementer
-const waveText = document.getElementById("waveText");
-const moneyText = document.getElementById("moneyText");
-const startWaveBtn = document.getElementById("startWaveBtn");
+    let barricades = [];
+    let towers = [];
+    let unlockedTowers = ["rifle", "shotgun", "freeze"];
 
-// ---------------------------
-// Canvas-resize (valgfritt)
-// ---------------------------
-function resizeCanvas() {
-  // Holder 900x600 som base, men skalerer visuelt
-  const scale = Math.min(
-    window.innerWidth / 900,
-    window.innerHeight / 600
-  );
+    // ---------------------------
+    // Canvas + UI
+    // ---------------------------
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const waveText = document.getElementById("waveText");
+    const moneyText = document.getElementById("moneyText");
+    const startWaveBtn = document.getElementById("startWaveBtn");
 
-  canvas.style.transform = `scale(${scale})`;
-  canvas.style.transformOrigin = "top left";
-}
-
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-// ---------------------------
-// Game Loop
-// ---------------------------
-let lastTime = 0;
-
-function gameLoop(timestamp) {
-  const dt = timestamp - lastTime;
-  lastTime = timestamp;
-
-  update(dt);
-  draw();
-
-  requestAnimationFrame(gameLoop);
-}
-
-requestAnimationFrame(gameLoop);
-
-// ---------------------------
-// Update-funksjon
-// ---------------------------
-function update(dt) {
-  // Oppdater bølgesystem
-  updateWaveSystem(dt);
-
-  // Oppdater fiender
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const e = enemies[i];
-
-    // Placeholder-bevegelse (rett frem)
-    e.x += e.speed * 0.1 * dt;
-
-    // Hvis fienden går ut av skjermen → fjern
-    if (e.x > canvas.width + 50) {
-      enemies.splice(i, 1);
+    function resizeCanvas() {
+      const scale = Math.min(
+        window.innerWidth / 900,
+        window.innerHeight / 600
+      );
+      canvas.style.transform = `scale(${scale})`;
+      canvas.style.transformOrigin = "top left";
     }
-  }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-  // Oppdater UI
-  waveText.textContent = currentWaveIndex + 1;
-  moneyText.textContent = money;
+    // ---------------------------
+    // Waves
+    // ---------------------------
+    const waves = [
+      {
+        id: 1,
+        enemies: [{ type: "grunt", count: 10, interval: 700 }],
+        reward: 40,
+        unlocks: ["rifle", "shotgun", "freeze"]
+      },
+      {
+        id: 2,
+        enemies: [{ type: "grunt", count: 14, interval: 650 }],
+        reward: 45,
+        unlocks: []
+      },
+      {
+        id: 3,
+        enemies: [
+          { type: "grunt", count: 12, interval: 600 },
+          { type: "runner", count: 4, interval: 900 }
+        ],
+        reward: 55,
+        unlocks: []
+      },
+      {
+        id: 4,
+        enemies: [
+          { type: "grunt", count: 18, interval: 550 },
+          { type: "runner", count: 6, interval: 850 }
+        ],
+        reward: 70,
+        unlocks: ["sniper", "bomb", "scatter"]
+      },
+      {
+        id: 5,
+        enemies: [
+          { type: "grunt", count: 20, interval: 500 },
+          { type: "runner", count: 8, interval: 800 },
+          { type: "tank", count: 1, interval: 0 }
+        ],
+        reward: 90,
+        unlocks: []
+      },
+      {
+        id: 6,
+        enemies: [
+          { type: "swarm", count: 25, interval: 200 },
+          { type: "grunt", count: 10, interval: 600 }
+        ],
+        reward: 100,
+        unlocks: []
+      },
+      {
+        id: 7,
+        enemies: [
+          { type: "runner", count: 12, interval: 700 },
+          { type: "grunt", count: 20, interval: 500 }
+        ],
+        reward: 120,
+        unlocks: []
+      },
+      {
+        id: 8,
+        enemies: [
+          { type: "tank", count: 2, interval: 0 },
+          { type: "grunt", count: 25, interval: 450 }
+        ],
+        reward: 150,
+        unlocks: ["fire", "chain", "gravity"]
+      },
+      {
+        id: 9,
+        enemies: [
+          { type: "swarm", count: 40, interval: 150 },
+          { type: "runner", count: 10, interval: 700 }
+        ],
+        reward: 180,
+        unlocks: []
+      },
+      {
+        id: 10,
+        enemies: [
+          { type: "tank", count: 3, interval: 0 },
+          { type: "grunt", count: 30, interval: 450 }
+        ],
+        reward: 250,
+        unlocks: []
+      }
+    ];
 
-  // Vis "Start neste bølge"-knapp når vi er i pause
-  startWaveBtn.style.display = isBetweenWaves ? "block" : "none";
-}
-
-// ---------------------------
-// Tegne-funksjon
-// ---------------------------
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Tegn fiender (enkle sirkler foreløpig)
-  for (const e of enemies) {
-    ctx.fillStyle = getEnemyColor(e.type);
-    ctx.beginPath();
-    ctx.arc(e.x, e.y || 300, 12, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-// ---------------------------
-// Fiende-farger (midlertidig)
-// ---------------------------
-function getEnemyColor(type) {
-  switch (type) {
-    case "grunt": return "#4caf50";
-    case "runner": return "#ff9800";
-    case "tank": return "#f44336";
-    case "swarm": return "#9c27b0";
-    default: return "#fff";
-  }
-}
-
-// ---------------------------
-// Start neste bølge-knapp
-// ---------------------------
-startWaveBtn.addEventListener("click", () => {
-  startWave();
-});
-
-// fortsettelse her:
-// TORGRIM DEFENSE – Path System (DEL 3)
-
-// ---------------------------
-// S-formet hovedsti
-// (punkter fiender følger i rekkefølge)
-// ---------------------------
-const mainPath = [
-  { x: 0,   y: 300 },
-  { x: 200, y: 300 },
-  { x: 350, y: 200 },
-  { x: 500, y: 200 },
-  { x: 650, y: 350 },
-  { x: 800, y: 350 },
-  { x: 900, y: 300 }
-];
-
-// ---------------------------
-// Snarveier (semi-åpent kart)
-// Fiender kan velge disse hvis hovedstien blokkeres
-// ---------------------------
-const sidePaths = [
-  [
-    { x: 200, y: 300 },
-    { x: 250, y: 400 },
-    { x: 350, y: 400 },
-    { x: 500, y: 300 }
-  ],
-  [
-    { x: 500, y: 200 },
-    { x: 550, y: 100 },
-    { x: 700, y: 150 },
-    { x: 800, y: 300 }
-  ]
-];
-
-// ---------------------------
-// Hjelpefunksjon: finn nærmeste punkt
-// ---------------------------
-function getNextPathPoint(enemy) {
-  const path = enemy.path;
-  const index = enemy.pathIndex;
-
-  if (index >= path.length - 1) return null;
-
-  return path[index + 1];
-}
-
-// ---------------------------
-// Gi fiende en sti når den spawner
-// ---------------------------
-function assignPathToEnemy(enemy) {
-  // Foreløpig: alltid hovedstien
-  // (senere: sjekk barrikader og velg sidePath)
-  enemy.path = mainPath;
-  enemy.pathIndex = 0;
-
-  // Startposisjon
-  enemy.x = mainPath[0].x;
-  enemy.y = mainPath[0].y;
-}
-
-// ---------------------------
-// Oppdater fiendebevegelse
-// ---------------------------
-function updateEnemyMovement(enemy, dt) {
-  const next = getNextPathPoint(enemy);
-  if (!next) {
-    // Fienden nådde basen (TODO: skade base)
-    enemy.alive = false;
-    return;
-  }
-
-  const dx = next.x - enemy.x;
-  const dy = next.y - enemy.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-
-  if (dist < 1) {
-    enemy.pathIndex++;
-    return;
-  }
-
-  const speed = enemy.speed * 0.1 * dt;
-  enemy.x += (dx / dist) * speed;
-  enemy.y += (dy / dist) * speed;
-}
-
-// ---------------------------
-// Overstyrer spawnEnemy fra DEL 1
-// ---------------------------
-function spawnEnemy(type) {
-  const enemy = {
-    type,
-    hp: getEnemyBaseHp(type),
-    speed: getEnemyBaseSpeed(type),
-    alive: true,
-    path: null,
-    pathIndex: 0,
-    x: 0,
-    y: 0
-  };
-
-  assignPathToEnemy(enemy);
-  enemies.push(enemy);
-}
-
-// ---------------------------
-// Oppdater fiender i update()
-// (erstatter placeholder-bevegelse)
-// ---------------------------
-function updateEnemies(dt) {
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const e = enemies[i];
-
-    if (!e.alive) {
-      enemies.splice(i, 1);
-      continue;
+    // ---------------------------
+    // Enemy stats
+    // ---------------------------
+    function getEnemyBaseHp(type) {
+      switch (type) {
+        case "grunt": return 30;
+        case "runner": return 20;
+        case "tank": return 150;
+        case "swarm": return 10;
+        default: return 30;
+      }
     }
 
-    updateEnemyMovement(e, dt);
-  }
-}
+    function getEnemyBaseSpeed(type) {
+      switch (type) {
+        case "grunt": return 1.0;
+        case "runner": return 1.8;
+        case "tank": return 0.6;
+        case "swarm": return 1.4;
+        default: return 1.0;
+      }
+    }
 
-// Bytt ut fiende-loopen i update():
-// (finn denne i DEL 2 og erstatt den)
-//
-// for (let i = enemies.length - 1; i >= 0; i--) {
-//   const e = enemies[i];
-//   e.x += e.speed * 0.1 * dt;
-//   if (e.x > canvas.width + 50) enemies.splice(i, 1);
-// }
-//
-// med:
-//
-// updateEnemies(dt);
+    function getEnemyColor(type) {
+      switch (type) {
+        case "grunt": return "#4caf50";
+        case "runner": return "#ff9800";
+        case "tank": return "#f44336";
+        case "swarm": return "#9c27b0";
+        default: return "#fff";
+      }
+    }
 
-// fortsettelse her:
+    // ---------------------------
+    // Paths
+    // ---------------------------
+    const mainPath = [
+      { x: 0,   y: 300 },
+      { x: 200, y: 300 },
+      { x: 350, y: 200 },
+      { x: 500, y: 200 },
+      { x: 650, y: 350 },
+      { x: 800, y: 350 },
+      { x: 900, y: 300 }
+    ];
 
-// TORGRIM DEFENSE – Barrikade-system (DEL 4)
+    const sidePaths = [
+      [
+        { x: 200, y: 300 },
+        { x: 250, y: 400 },
+        { x: 350, y: 400 },
+        { x: 500, y: 300 }
+      ],
+      [
+        { x: 500, y: 200 },
+        { x: 550, y: 100 },
+        { x: 700, y: 150 },
+        { x: 800, y: 300 }
+      ]
+    ];
 
-// ---------------------------
-// Barrikade-liste
-// ---------------------------
-let barricades = [];
+    function distancePointToSegment(px, py, x1, y1, x2, y2) {
+      const A = px - x1;
+      const B = py - y1;
+      const C = x2 - x1;
+      const D = y2 - y1;
 
-// ---------------------------
-// Barrikade-typer
-// ---------------------------
-const BARRICADE_TYPES = {
-  small: {
-    hp: 40,
-    size: 20,
-    blocks: true,      // blokkerer sti midlertidig
-    cost: 20
-  },
-  large: {
-    hp: 150,
-    size: 40,
-    blocks: true,      // blokkerer sti til den ødelegges
-    cost: 60
-  }
-};
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let t = -1;
 
-// ---------------------------
-// Plassere barrikade
-// (senere kobles til UI-klikk)
-// ---------------------------
-function placeBarricade(x, y, type) {
-  const data = BARRICADE_TYPES[type];
-  if (!data) return;
+      if (lenSq !== 0) t = dot / lenSq;
+      if (t < 0) return Math.hypot(px - x1, py - y1);
+      if (t > 1) return Math.hypot(px - x2, py - y2);
 
-  if (money < data.cost) return; // ikke nok penger
+      const projX = x1 + t * C;
+      const projY = y1 + t * D;
 
-  barricades.push({
-    x,
-    y,
-    hp: data.hp,
-    size: data.size,
-    type,
-    blocks: data.blocks
-  });
+      return Math.hypot(px - projX, py - projY);
+    }
 
-  money -= data.cost;
-}
+    function isSegmentBlocked(x1, y1, x2, y2) {
+      for (const b of barricades) {
+        const dist = distancePointToSegment(b.x, b.y, x1, y1, x2, y2);
+        if (dist < b.size) return true;
+      }
+      return false;
+    }
 
-// ---------------------------
-// Tegne barrikader
-// ---------------------------
-function drawBarricades() {
-  for (const b of barricades) {
-    ctx.fillStyle = b.type === "small" ? "#ffaa00" : "#ff4444";
-    ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
-  }
-}
+    function isPathBlocked(path) {
+      for (let i = 0; i < path.length - 1; i++) {
+        const p1 = path[i];
+        const p2 = path[i + 1];
+        if (isSegmentBlocked(p1.x, p1.y, p2.x, p2.y)) return true;
+      }
+      return false;
+    }
 
-// ---------------------------
-// Kollisjon mellom fiende og barrikade
-// ---------------------------
-function enemyHitsBarricade(enemy, barricade) {
-  const dx = enemy.x - barricade.x;
-  const dy = enemy.y - barricade.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
+    function choosePathForEnemy(enemy) {
+      if (!isPathBlocked(mainPath)) {
+        enemy.path = mainPath;
+        enemy.pathIndex = 0;
+        return;
+      }
+      for (const sp of sidePaths) {
+        if (!isPathBlocked(sp)) {
+          enemy.path = sp;
+          enemy.pathIndex = 0;
+          return;
+        }
+      }
+      enemy.path = mainPath;
+      enemy.pathIndex = 0;
+      enemy.forceBreak = true;
+    }
 
-  return dist < barricade.size;
-}
+    function getNextPathPoint(enemy) {
+      const path = enemy.path;
+      const index = enemy.pathIndex;
+      if (!path || index >= path.length - 1) return null;
+      return path[index + 1];
+    }
 
-// ---------------------------
-// Fiender reagerer på barrikader
-// ---------------------------
-function updateEnemyBarricadeInteraction(enemy, dt) {
-  for (let i = barricades.length - 1; i >= 0; i--) {
-    const b = barricades[i];
+    function assignPathToEnemy(enemy) {
+      choosePathForEnemy(enemy);
+      enemy.x = enemy.path[0].x;
+      enemy.y = enemy.path[0].y;
+    }
 
-    if (enemyHitsBarricade(enemy, b)) {
-
-      // Runner prøver å gå rundt (senere pathfinding)
-      if (enemy.type === "runner") {
-        enemy.x += (Math.random() - 0.5) * 0.5;
-        enemy.y += (Math.random() - 0.5) * 0.5;
+    function updateEnemyMovement(enemy, dt) {
+      const next = getNextPathPoint(enemy);
+      if (!next) {
+        enemy.alive = false;
         return;
       }
 
-      // Tank angriper store barrikader
-      if (enemy.type === "tank" && b.type === "large") {
-        b.hp -= 0.2 * dt;
-      }
-
-      // Grunt og swarm angriper små barrikader
-      if (enemy.type !== "tank" && b.type === "small") {
-        b.hp -= 0.1 * dt;
-      }
-
-      // Fjern barrikade hvis ødelagt
-      if (b.hp <= 0) {
-        barricades.splice(i, 1);
-      }
-
-      // Stopper fienden midlertidig
-      enemy.speed = 0.2;
-      return;
-    }
-  }
-
-  // Hvis ingen barrikade i veien → normal fart
-  enemy.speed = getEnemyBaseSpeed(enemy.type);
-}
-
-// ---------------------------
-// Koble inn i updateEnemies()
-// ---------------------------
-function updateEnemies(dt) {
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const e = enemies[i];
-
-    if (!e.alive) {
-      enemies.splice(i, 1);
-      continue;
-    }
-
-    // sjekk barrikader
-    updateEnemyBarricadeInteraction(e, dt);
-
-    // bevegelse
-    updateEnemyMovement(e, dt);
-  }
-}
-
-// ---------------------------
-// Tegne barrikader i draw()
-// ---------------------------
-// (legg dette inn i draw() etter fiender)
-drawBarricades();
-
-// fortsettelse her:
-// fortsettelse her:
-
-// TORGRIM DEFENSE – Dynamisk Pathfinding (DEL 5)
-
-// ---------------------------
-// Sjekk om et path-segment er blokkert
-// ---------------------------
-function isSegmentBlocked(x1, y1, x2, y2) {
-  for (const b of barricades) {
-    // Avstand fra barrikade til linje-segment
-    const dist = distancePointToSegment(b.x, b.y, x1, y1, x2, y2);
-
-    if (dist < b.size) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// ---------------------------
-// Avstand fra punkt til linje-segment
-// (brukes for å sjekke blokkering)
-// ---------------------------
-function distancePointToSegment(px, py, x1, y1, x2, y2) {
-  const A = px - x1;
-  const B = py - y1;
-  const C = x2 - x1;
-  const D = y2 - y1;
-
-  const dot = A * C + B * D;
-  const lenSq = C * C + D * D;
-  let t = -1;
-
-  if (lenSq !== 0) t = dot / lenSq;
-  if (t < 0) return Math.hypot(px - x1, py - y1);
-  if (t > 1) return Math.hypot(px - x2, py - y2);
-
-  const projX = x1 + t * C;
-  const projY = y1 + t * D;
-
-  return Math.hypot(px - projX, py - projY);
-}
-
-// ---------------------------
-// Sjekk om hele pathen er blokkert
-// ---------------------------
-function isPathBlocked(path) {
-  for (let i = 0; i < path.length - 1; i++) {
-    const p1 = path[i];
-    const p2 = path[i + 1];
-
-    if (isSegmentBlocked(p1.x, p1.y, p2.x, p2.y)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// ---------------------------
-// Velg beste sti for fienden
-// ---------------------------
-function choosePathForEnemy(enemy) {
-  // 1. Prøv hovedstien
-  if (!isPathBlocked(mainPath)) {
-    enemy.path = mainPath;
-    enemy.pathIndex = 0;
-    return;
-  }
-
-  // 2. Prøv snarveier
-  for (const sp of sidePaths) {
-    if (!isPathBlocked(sp)) {
-      enemy.path = sp;
-      enemy.pathIndex = 0;
-      return;
-    }
-  }
-
-  // 3. Alt er blokkert → fienden må slå seg gjennom
-  enemy.path = mainPath;
-  enemy.pathIndex = 0;
-  enemy.forceBreak = true;
-}
-
-// ---------------------------
-// Overstyr assignPathToEnemy
-// ---------------------------
-function assignPathToEnemy(enemy) {
-  choosePathForEnemy(enemy);
-
-  // Startposisjon
-  enemy.x = enemy.path[0].x;
-  enemy.y = enemy.path[0].y;
-}
-
-// ---------------------------
-// Fiender som må slå seg gjennom
-// ---------------------------
-function updateEnemyBarricadeInteraction(enemy, dt) {
-  for (let i = barricades.length - 1; i >= 0; i--) {
-    const b = barricades[i];
-
-    if (enemyHitsBarricade(enemy, b)) {
-
-      // Hvis fienden er i "forceBreak"-modus → slå hardt
-      if (enemy.forceBreak) {
-        b.hp -= 0.3 * dt;
-      }
-
-      // Tank slår alltid hardt
-      if (enemy.type === "tank") {
-        b.hp -= 0.25 * dt;
-      }
-
-      // Vanlige fiender slår svakere
-      if (!enemy.forceBreak && enemy.type !== "tank") {
-        b.hp -= 0.1 * dt;
-      }
-
-      if (b.hp <= 0) {
-        barricades.splice(i, 1);
-        // Etter å ha ødelagt → re-evaluer sti
-        choosePathForEnemy(enemy);
-      }
-
-      enemy.speed = 0.2;
-      return;
-    }
-  }
-
-  enemy.speed = getEnemyBaseSpeed(enemy.type);
-}
-
-// fortsettelse her:
-// fortsettelse her:
-
-// TORGRIM DEFENSE – Tårn-system (DEL 6)
-
-// ---------------------------
-// Tårn-liste
-// ---------------------------
-let towers = [];
-
-// ---------------------------
-// Tårn-typer (enkel versjon nå)
-// ---------------------------
-const TOWER_TYPES = {
-  rifle: {
-    name: "Rifle Tower",
-    range: 120,
-    damage: 8,
-    fireRate: 600, // ms mellom skudd
-    cost: 40,
-    color: "#4fc3f7"
-  },
-  shotgun: {
-    name: "Shotgun Tower",
-    range: 80,
-    damage: 18,
-    fireRate: 900,
-    cost: 55,
-    color: "#ffb74d"
-  },
-  freeze: {
-    name: "Freeze Tower",
-    range: 100,
-    damage: 2,
-    fireRate: 700,
-    cost: 50,
-    color: "#80deea",
-    slowFactor: 0.5,
-    slowDuration: 600
-  }
-  // Senere: legg til sniper, bomb, osv.
-};
-
-// ---------------------------
-// Tilgjengelige tårn (låses opp via waves)
-// ---------------------------
-let unlockedTowers = ["rifle", "shotgun", "freeze"];
-
-// ---------------------------
-// Plassere tårn (midlertidig: på klikk)
-// ---------------------------
-canvas.addEventListener("click", (e) => {
-  // midlertidig: plasser alltid rifle
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top) * scaleY;
-
-  placeTower(x, y, "rifle");
-});
-
-function placeTower(x, y, type) {
-  if (!unlockedTowers.includes(type)) return;
-
-  const data = TOWER_TYPES[type];
-  if (!data) return;
-  if (money < data.cost) return;
-
-  towers.push({
-    x,
-    y,
-    type,
-    range: data.range,
-    damage: data.damage,
-    fireRate: data.fireRate,
-    lastShot: 0,
-    slowFactor: data.slowFactor || null,
-    slowDuration: data.slowDuration || null
-  });
-
-  money -= data.cost;
-}
-
-// ---------------------------
-// Tårn skyter på nærmeste fiende i range
-// ---------------------------
-function updateTowers(dt) {
-  for (const t of towers) {
-    t.lastShot += dt;
-
-    const data = TOWER_TYPES[t.type];
-    if (!data) continue;
-
-    if (t.lastShot < data.fireRate) continue;
-
-    // Finn mål
-    let target = null;
-    let closestDist = Infinity;
-
-    for (const e of enemies) {
-      const dx = e.x - t.x;
-      const dy = e.y - t.y;
+      const dx = next.x - enemy.x;
+      const dy = next.y - enemy.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
 
-      if (dist <= t.range && dist < closestDist) {
-        closestDist = dist;
-        target = e;
+      if (dist < 1) {
+        enemy.pathIndex++;
+        return;
       }
+
+      const speed = enemy.speed * 0.1 * dt;
+      enemy.x += (dx / dist) * speed;
+      enemy.y += (dy / dist) * speed;
     }
 
-    if (target) {
-      // Skyt
-      target.hp -= t.damage;
-
-      // Freeze-effekt
-      if (t.slowFactor && t.slowDuration) {
-        applySlowEffect(target, t.slowFactor, t.slowDuration);
-      }
-
-      if (target.hp <= 0) {
-        target.alive = false;
-        money += 5; // liten kill-reward
-      }
-
-      t.lastShot = 0;
-    }
-  }
-}
-
-// ---------------------------
-// Slow-effekt (fra Freeze Tower)
-// ---------------------------
-function applySlowEffect(enemy, factor, duration) {
-  if (!enemy.slow) {
-    enemy.slow = {
-      factor,
-      remaining: duration
+    // ---------------------------
+    // Barrikader
+    // ---------------------------
+    const BARRICADE_TYPES = {
+      small: { hp: 40, size: 20, blocks: true, cost: 20 },
+      large: { hp: 150, size: 40, blocks: true, cost: 60 }
     };
-  } else {
-    // fornyer varighet
-    enemy.slow.factor = factor;
-    enemy.slow.remaining = duration;
-  }
-}
 
-// ---------------------------
-// Oppdater slow i updateEnemies()
-// ---------------------------
-function updateEnemies(dt) {
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const e = enemies[i];
+    function placeBarricade(x, y, type) {
+      const data = BARRICADE_TYPES[type];
+      if (!data) return;
+      if (money < data.cost) return;
 
-    if (!e.alive) {
-      enemies.splice(i, 1);
-      continue;
+      barricades.push({
+        x,
+        y,
+        hp: data.hp,
+        size: data.size,
+        type,
+        blocks: data.blocks
+      });
+
+      money -= data.cost;
     }
 
-    // slow-effekt
-    if (e.slow) {
-      e.slow.remaining -= dt;
-      if (e.slow.remaining <= 0) {
-        e.slow = null;
+    function drawBarricades() {
+      for (const b of barricades) {
+        ctx.fillStyle = b.type === "small" ? "#ffaa00" : "#ff4444";
+        ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
       }
     }
 
-    // base speed
-    let baseSpeed = getEnemyBaseSpeed(e.type);
-
-    // slow
-    if (e.slow) {
-      baseSpeed *= e.slow.factor;
+    function enemyHitsBarricade(enemy, barricade) {
+      const dx = enemy.x - barricade.x;
+      const dy = enemy.y - barricade.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      return dist < barricade.size;
     }
 
-    e.speed = baseSpeed;
+    function updateEnemyBarricadeInteraction(enemy, dt) {
+      for (let i = barricades.length - 1; i >= 0; i--) {
+        const b = barricades[i];
 
-    // barrikade-interaksjon
-    updateEnemyBarricadeInteraction(e, dt);
+        if (enemyHitsBarricade(enemy, b)) {
+          if (enemy.forceBreak) b.hp -= 0.3 * dt;
+          if (enemy.type === "tank") b.hp -= 0.25 * dt;
+          if (!enemy.forceBreak && enemy.type !== "tank") b.hp -= 0.1 * dt;
 
-    // bevegelse
-    updateEnemyMovement(e, dt);
-  }
-}
+          if (b.hp <= 0) {
+            barricades.splice(i, 1);
+            choosePathForEnemy(enemy);
+          }
 
-// ---------------------------
-// Tegne tårn
-// ---------------------------
-function drawTowers() {
-  for (const t of towers) {
-    const data = TOWER_TYPES[t.type];
-    ctx.fillStyle = data ? data.color : "#ffffff";
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, 12, 0, Math.PI * 2);
-    ctx.fill();
+          enemy.speed = 0.2;
+          return;
+        }
+      }
+      enemy.speed = getEnemyBaseSpeed(enemy.type);
+    }
 
-    // range-sirkel (svak)
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-}
+    // ---------------------------
+    // Tårn
+    // ---------------------------
+    const TOWER_TYPES = {
+      rifle: {
+        name: "Rifle Tower",
+        range: 120,
+        damage: 8,
+        fireRate: 600,
+        cost: 40,
+        color: "#4fc3f7"
+      },
+      shotgun: {
+        name: "Shotgun Tower",
+        range: 80,
+        damage: 18,
+        fireRate: 900,
+        cost: 55,
+        color: "#ffb74d"
+      },
+      freeze: {
+        name: "Freeze Tower",
+        range: 100,
+        damage: 2,
+        fireRate: 700,
+        cost: 50,
+        color: "#80deea",
+        slowFactor: 0.5,
+        slowDuration: 600
+      }
+    };
 
-// ---------------------------
-// Koble inn i update() og draw()
-// ---------------------------
-// I update():
-// legg til:
-updateTowers(dt);
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
 
-// I draw():
-// legg til:
-drawTowers();
+      placeTower(x, y, "rifle");
+    });
 
-// fortsettelse her:
+    function placeTower(x, y, type) {
+      if (!unlockedTowers.includes(type)) return;
+      const data = TOWER_TYPES[type];
+      if (!data) return;
+      if (money < data.cost) return;
 
+      towers.push({
+        x,
+        y,
+        type,
+        range: data.range,
+        damage: data.damage,
+        fireRate: data.fireRate,
+        lastShot: 0,
+        slowFactor: data.slowFactor || null,
+        slowDuration: data.slowDuration || null
+      });
 
+      money -= data.cost;
+    }
+
+    function applySlowEffect(enemy, factor, duration) {
+      if (!enemy.slow) {
+        enemy.slow = { factor, remaining: duration };
+      } else {
+        enemy.slow.factor = factor;
+        enemy.slow.remaining = duration;
+      }
+    }
+
+    function updateTowers(dt) {
+      for (const t of towers) {
+        t.lastShot += dt;
+        const data = TOWER_TYPES[t.type];
+        if (!data) continue;
+        if (t.lastShot < data.fireRate) continue;
+
+        let target = null;
+        let closestDist = Infinity;
+
+        for (const e of enemies) {
+          const dx = e.x - t.x;
+          const dy = e.y - t.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist <= t.range && dist < closestDist) {
+            closestDist = dist;
+            target = e;
+          }
+        }
+
+        if (target) {
+          target.hp -= t.damage;
+
+          if (t.slowFactor && t.slowDuration) {
+            applySlowEffect(target, t.slowFactor, t.slowDuration);
+          }
+
+          if (target.hp <= 0) {
+            target.alive = false;
+            money += 5;
+          }
+
+          t.lastShot = 0;
+        }
+      }
+    }
+
+    function drawTowers() {
+      for (const t of towers) {
+        const data = TOWER_TYPES[t.type];
+        ctx.fillStyle = data ? data.color : "#ffffff";
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // ---------------------------
+    // Wave system
+    // ---------------------------
+    function startWave() {
+      if (isWaveRunning) return;
+      if (currentWaveIndex >= waves.length) {
+        console.log("Ingen flere bølger.");
+        return;
+      }
+
+      const wave = waves[currentWaveIndex];
+      console.log("Starter bølge:", wave.id);
+
+      isWaveRunning = true;
+      isBetweenWaves = false;
+
+      pendingSpawns = [];
+      for (const group of wave.enemies) {
+        for (let i = 0; i < group.count; i++) {
+          pendingSpawns.push({
+            type: group.type,
+            interval: group.interval
+          });
+        }
+      }
+      pendingSpawns.sort(() => Math.random() - 0.5);
+      spawnTimer = 0;
+    }
+
+    function spawnEnemy(type) {
+      const enemy = {
+        type,
+        hp: getEnemyBaseHp(type),
+        speed: getEnemyBaseSpeed(type),
+        alive: true,
+        path: null,
+        pathIndex: 0,
+        x: 0,
+        y: 0,
+        slow: null,
+        forceBreak: false
+      };
+      assignPathToEnemy(enemy);
+      enemies.push(enemy);
+    }
+
+    function updateWaveSystem(dt) {
+      if (!isWaveRunning) return;
+
+      if (pendingSpawns.length > 0) {
+        spawnTimer -= dt;
+        if (spawnTimer <= 0) {
+          const next = pendingSpawns.shift();
+          spawnEnemy(next.type);
+          spawnTimer = next.interval;
+        }
+      }
+
+      if (pendingSpawns.length === 0 && enemies.length === 0) {
+        endWave();
+      }
+    }
+
+    function endWave() {
+      const wave = waves[currentWaveIndex];
+      console.log("Bølge ferdig:", wave.id);
+
+      isWaveRunning = false;
+      isBetweenWaves = true;
+
+      money += wave.reward;
+
+      if (wave.unlocks && wave.unlocks.length > 0) {
+        for (const t of wave.unlocks) {
+          if (!unlockedTowers.includes(t)) {
+            unlockedTowers.push(t);
+          }
+        }
+      }
+
+      currentWaveIndex++;
+    }
+
+    startWaveBtn.addEventListener("click", () => {
+      startWave();
+    });
+
+    // ---------------------------
+    // Update + draw
+    // ---------------------------
+    function updateEnemies(dt) {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+
+        if (!e.alive) {
+          enemies.splice(i, 1);
+          continue;
+        }
+
+        if (e.slow) {
+          e.slow.remaining -= dt;
+          if (e.slow.remaining <= 0) e.slow = null;
+        }
+
+        let baseSpeed = getEnemyBaseSpeed(e.type);
+        if (e.slow) baseSpeed *= e.slow.factor;
+        e.speed = baseSpeed;
+
+        updateEnemyBarricadeInteraction(e, dt);
+        updateEnemyMovement(e, dt);
+      }
+    }
+
+    function update(dt) {
+      updateWaveSystem(dt);
+      updateEnemies(dt);
+      updateTowers(dt);
+
+      waveText.textContent = currentWaveIndex + 1;
+      moneyText.textContent = money;
+      startWaveBtn.style.display = isBetweenWaves ? "block" : "none";
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const e of enemies) {
+        ctx.fillStyle = getEnemyColor(e.type);
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawBarricades();
+      drawTowers();
+    }
+
+    // ---------------------------
+    // Game loop
+    // ---------------------------
+    let lastTime = 0;
+    function gameLoop(timestamp) {
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
   </script>
 
 </body>
