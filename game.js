@@ -266,11 +266,31 @@ function choosePathForEnemy(enemy) {
     }
   }
 
-  // Hvis alt er blokkert → fienden blir sint
-  enemy.path = mainPath;
+  // Hvis alt er blokkert → fienden går til nærmeste barrikade og knuser den
+let closest = null;
+let closestDist = Infinity;
+
+for (const b of barricades) {
+  const dx = b.x - enemy.x;
+  const dy = b.y - enemy.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < closestDist) {
+    closestDist = dist;
+    closest = b;
+  }
+}
+
+if (closest) {
+  enemy.path = [
+    { x: enemy.x, y: enemy.y },
+    { x: closest.x, y: closest.y }
+  ];
   enemy.pathIndex = 0;
   enemy.forceBreak = true;
+  return;
 }
+
 
 function getNextPathPoint(enemy) {
   const path = enemy.path;
