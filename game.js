@@ -647,6 +647,27 @@ function applySlowEffect(enemy, factor, duration) {
 function updateEnemyMovement(enemy, dt) {
   const next = getNextPathPoint(enemy);
 
+  // Hvis fienden står fast for lenge → velg ny sti
+if (!enemy.lastPos) enemy.lastPos = { x: enemy.x, y: enemy.y, timer: 0 };
+
+const movedDist = Math.hypot(enemy.x - enemy.lastPos.x, enemy.y - enemy.lastPos.y);
+
+if (movedDist < 0.5) {
+  enemy.lastPos.timer += dt;
+
+  // 500 ms uten bevegelse = STUCK
+  if (enemy.lastPos.timer > 500) {
+    choosePathForEnemy(enemy); // tving ny sti
+    enemy.lastPos.timer = 0;
+  }
+} else {
+  // fienden beveger seg normalt
+  enemy.lastPos.x = enemy.x;
+  enemy.lastPos.y = enemy.y;
+  enemy.lastPos.timer = 0;
+}
+
+
   // Nådd enden → skade spiller
   if (!next) {
     enemy.alive = false;
