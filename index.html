@@ -32,6 +32,18 @@
       z-index: 10;
     }
 
+    #healthBar {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #0008;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 10;
+}
+
+
     #startWaveBtn {
       position: fixed;
       bottom: 20px;
@@ -89,6 +101,10 @@
   <canvas id="gameCanvas" width="900" height="600"></canvas>
 
   <div id="topBar">
+    <div id="healthBar">
+  HP: <span id="hpText">20</span>
+</div>
+
     Bølge: <span id="waveText">1</span> |
     Penger: <span id="moneyText">100</span>
   </div>
@@ -269,6 +285,19 @@ let maxHealth = 20;
       }
     }
 
+//la til:
+    function damagePlayer(amount) {
+  playerHealth -= amount;
+  if (playerHealth < 0) playerHealth = 0;
+  document.getElementById("hpText").textContent = playerHealth;
+
+  if (playerHealth <= 0) {
+    alert("GAME OVER! Du ble overkjørt av slemmingene 😈");
+    location.reload();
+  }
+}
+
+    
     // ---------------------------
     // Paths
     // ---------------------------
@@ -368,9 +397,17 @@ let maxHealth = 20;
     function updateEnemyMovement(enemy, dt) {
       const next = getNextPathPoint(enemy);
       if (!next) {
-        enemy.alive = false;
-        return;
-      }
+    enemy.alive = false;
+
+    // skade basert på type
+    const dmg = enemy.type === "tank" ? 3 :
+                enemy.type === "runner" ? 2 :
+                enemy.type === "swarm" ? 1 : 1;
+
+    damagePlayer(dmg);
+    return;
+}
+
 
       const dx = next.x - enemy.x;
       const dy = next.y - enemy.y;
@@ -473,7 +510,7 @@ let maxHealth = 20;
         fireRate: 700,
         cost: 50,
         color: "#80deea",
-        slowFactor: 0.5,
+        slowFactor: 1.0,
         slowDuration: 600
       }
     };
