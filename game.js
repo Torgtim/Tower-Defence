@@ -957,7 +957,7 @@ function drawBullets() {
     if (!b.target || !b.target.alive) continue;
 
     ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 0.7;
+    ctx.lineWidth = 2.0;
     ctx.beginPath();
     ctx.moveTo(b.x, b.y);
     ctx.lineTo(b.target.x, b.target.y);
