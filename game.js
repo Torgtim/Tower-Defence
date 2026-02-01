@@ -252,12 +252,14 @@ function isPathBlocked(path) {
 
 // Velg sti for fiende
 function choosePathForEnemy(enemy) {
+  // 1) Prøv hovedstien
   if (!isPathBlocked(mainPath)) {
     enemy.path = mainPath;
     enemy.pathIndex = 0;
     return;
   }
 
+  // 2) Prøv sideveier
   for (const sp of sidePaths) {
     if (!isPathBlocked(sp)) {
       enemy.path = sp;
@@ -266,7 +268,7 @@ function choosePathForEnemy(enemy) {
     }
   }
 
-  // Hvis alt er blokkert → fienden går til nærmeste barrikade og knuser den
+  // 3) Alt blokkert → gå til nærmeste barrikade
   let closest = null;
   let closestDist = Infinity;
 
@@ -291,19 +293,6 @@ function choosePathForEnemy(enemy) {
     return;
   }
 }
-
-
-  if (closest) {
-    enemy.path = [
-      { x: enemy.x, y: enemy.y },
-      { x: closest.x, y: closest.y }
-    ];
-    enemy.pathIndex = 0;
-    enemy.forceBreak = true;
-    return;
-  }
-}
-
 
 function getNextPathPoint(enemy) {
   const path = enemy.path;
