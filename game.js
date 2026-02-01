@@ -1100,7 +1100,8 @@ function gameLoop(timestamp) {
   draw();
 
   requestAnimationFrame(gameLoop);
-}
+
+requestAnimationFrame(gameLoop);
 
 // ======================================================
 //  CANVAS CLICK HANDLING (TÅRN + BARRIKADER + OPPGRADERING)
