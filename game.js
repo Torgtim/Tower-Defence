@@ -1071,26 +1071,6 @@ function drawBullets() {
 //  GAME LOOP
 // ======================================================
 
-function update(dt) {
-  updateWaveSystem(dt);
-  updateEnemies(dt);
-  updateTowers(dt);
-  updateBullets(dt);
-
-  waveText.textContent = currentWaveIndex;
-  moneyText.textContent = money;
-  startWaveBtn.style.display = isBetweenWaves ? "block" : "none";
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawEnemies();
-  drawBarricades();
-  drawTowers();
-  drawBullets();
-}
-
 let lastTime = 0;
 function gameLoop(timestamp) {
   const dt = timestamp - lastTime;
@@ -1100,9 +1080,8 @@ function gameLoop(timestamp) {
   draw();
 
   requestAnimationFrame(gameLoop);
-
-requestAnimationFrame(gameLoop);
 }
+
 
 // ======================================================
 //  CANVAS CLICK HANDLING (TÅRN + BARRIKADER + OPPGRADERING)
