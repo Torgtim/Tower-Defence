@@ -1,10 +1,10 @@
 // ======================================================
-//  TORGRIM DEFENSE — GAME.JS
-//  BLOKK 2/4 — Grunnvariabler, UI, HP, menyer, pathfinding
+//  TORGRIM DEFENSE — GAME.JS (RYDDET / MODULÆR STRUKTUR)
+//  Samme gameplay, renere struktur, ingen duplikater
 // ======================================================
 
 // ---------------------------
-// Grunnvariabler
+// 1. Grunnvariabler & tilstand
 // ---------------------------
 let currentWaveIndex = 0;
 let isWaveRunning = false;
@@ -34,7 +34,7 @@ let unlockedBarricades = ["small", "large", "tank"];
 let infiniteMode = false;
 
 // ---------------------------
-// Canvas + UI
+// 2. Canvas & UI
 // ---------------------------
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -55,9 +55,7 @@ const goKills = document.getElementById("goKills");
 const goSpent = document.getElementById("goSpent");
 const restartBtn = document.getElementById("restartBtn");
 
-// ---------------------------
 // Canvas skal skalere pent
-// ---------------------------
 function resizeCanvas() {
   const scale = Math.min(
     window.innerWidth / 900,
@@ -70,7 +68,7 @@ window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
 // ---------------------------
-// HP-bar oppdatering
+// 3. HP & Game Over
 // ---------------------------
 function updatePlayerHpUI() {
   const ratio = Math.max(0, playerHealth / maxHealth);
@@ -79,9 +77,6 @@ function updatePlayerHpUI() {
 }
 updatePlayerHpUI();
 
-// ---------------------------
-// Spilleren tar skade
-// ---------------------------
 function damagePlayer(amount) {
   playerHealth -= amount;
   if (playerHealth < 0) playerHealth = 0;
@@ -92,9 +87,6 @@ function damagePlayer(amount) {
   }
 }
 
-// ---------------------------
-// GAME OVER SCREEN
-// ---------------------------
 function triggerGameOver() {
   isWaveRunning = false;
   isBetweenWaves = false;
@@ -111,7 +103,7 @@ restartBtn.addEventListener("click", () => {
 });
 
 // ---------------------------
-// Menyvalg — Tårn
+// 4. Menyer (tårn & barrikader)
 // ---------------------------
 towerMenu.addEventListener("click", (e) => {
   const btn = e.target.closest("button");
@@ -123,47 +115,11 @@ towerMenu.addEventListener("click", (e) => {
   selectedTowerType = type;
   selectedBarricadeType = null;
 
-  // UI highlight
   towerMenu.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
   barricadeMenu.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
 });
 
-//skulle legge til:
-// ======================================================
-//  ENEMY VS BARRICADE INTERACTION
-// ======================================================
-
-function updateEnemyBarricadeInteraction(enemy, dt) {
-  for (let i = barricades.length - 1; i >= 0; i--) {
-    const b = barricades[i];
-
-    const dx = enemy.x - b.x;
-    const dy = enemy.y - b.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // Hvis fienden treffer barrikaden
-    if (dist < b.size + 10) {
-
-      // Fienden gjør skade på barrikaden
-      b.hp -= getEnemyDamage(enemy.type) * 0.05 * dt;
-
-      // Hvis barrikaden ødelegges
-      if (b.hp <= 0) {
-        barricades.splice(i, 1);
-      }
-
-      // Fienden stopper litt opp
-      enemy.speed *= 0.4;
-      return;
-    }
-  }
-}
-
-
-// ---------------------------
-// Menyvalg — Barrikader
-// ---------------------------
 barricadeMenu.addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
@@ -174,14 +130,13 @@ barricadeMenu.addEventListener("click", (e) => {
   selectedBarricadeType = type;
   selectedTowerType = null;
 
-  // UI highlight
   towerMenu.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
   barricadeMenu.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
 });
 
 // ======================================================
-//  PATHFINDING
+// 5. Pathfinding & barrikade-interaksjon
 // ======================================================
 
 // Hovedsti
@@ -211,7 +166,6 @@ const sidePaths = [
   ]
 ];
 
-// Avstand fra punkt til linjesegment
 function distancePointToSegment(px, py, x1, y1, x2, y2) {
   const A = px - x1;
   const B = py - y1;
@@ -232,7 +186,6 @@ function distancePointToSegment(px, py, x1, y1, x2, y2) {
   return Math.hypot(px - projX, py - projY);
 }
 
-// Sjekk om en sti er blokkert av barrikader
 function isSegmentBlocked(x1, y1, x2, y2) {
   for (const b of barricades) {
     const dist = distancePointToSegment(b.x, b.y, x1, y1, x2, y2);
@@ -250,7 +203,6 @@ function isPathBlocked(path) {
   return false;
 }
 
-// Velg sti for fiende
 function choosePathForEnemy(enemy) {
   // 1) Prøv hovedstien
   if (!isPathBlocked(mainPath)) {
@@ -307,17 +259,29 @@ function assignPathToEnemy(enemy) {
   enemy.y = enemy.path[0].y;
 }
 
-// ======================================================
-//  TORGRIM DEFENSE — GAME.JS
-//  BLOKK 3/4 — Fiender, waves, infinite mode, barrikader,
-//              tårn, oppgraderinger, freeze-effekter
-// ======================================================
+// Enemy vs barricade interaction
+function updateEnemyBarricadeInteraction(enemy, dt) {
+  for (let i = barricades.length - 1; i >= 0; i--) {
+    const b = barricades[i];
 
+    const dx = enemy.x - b.x;
+    const dy = enemy.y - b.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < b.size + 10) {
+      b.hp -= getEnemyDamage(enemy.type) * 0.05 * dt;
+      if (b.hp <= 0) {
+        barricades.splice(i, 1);
+      }
+      enemy.speed *= 0.4;
+      return;
+    }
+  }
+}
 
 // ======================================================
-//  ENEMY STATS & ABILITIES
+// 6. Enemy stats & abilities
 // ======================================================
-
 function getEnemyBaseHp(type) {
   switch (type) {
     case "grunt": return 35;
@@ -325,10 +289,10 @@ function getEnemyBaseHp(type) {
     case "tank": return 180;
     case "swarm": return 12;
     case "bruiser": return 70;
-    case "ghost": return 40;     // ignorerer barrikader
-    case "medic": return 45;     // healer andre
-    case "splitter": return 30;  // spawner 2 swarm
-    case "bomber": return 28;    // sprenger barrikader
+    case "ghost": return 40;
+    case "medic": return 45;
+    case "splitter": return 30;
+    case "bomber": return 28;
     default: return 30;
   }
 }
@@ -378,11 +342,9 @@ function getEnemyColor(type) {
   }
 }
 
-
 // ======================================================
-//  WAVES 1–30 + INFINITE MODE
+// 7. Waves & infinite mode
 // ======================================================
-
 const waves = [
   { id: 1, enemies: [{ type: "grunt", count: 8, interval: 800 }], reward: 40 },
   { id: 2, enemies: [{ type: "grunt", count: 12, interval: 700 }], reward: 45 },
@@ -400,7 +362,6 @@ const waves = [
       { type: "tank", count: 1, interval: 0 }
     ], reward: 90 },
 
-  // --- Waves 6–10 ---
   { id: 6, enemies: [
       { type: "swarm", count: 20, interval: 220 },
       { type: "grunt", count: 10, interval: 600 }
@@ -422,7 +383,6 @@ const waves = [
       { type: "grunt", count: 22, interval: 480 }
     ], reward: 250 },
 
-  // --- Waves 11–20 (nye fiender) ---
   { id: 11, enemies: [
       { type: "bruiser", count: 6, interval: 700 },
       { type: "grunt", count: 12, interval: 500 }
@@ -465,7 +425,6 @@ const waves = [
       { type: "bruiser", count: 10, interval: 600 }
     ], reward: 400 },
 
-  // --- Waves 21–30 (kaos) ---
   { id: 21, enemies: [
       { type: "ghost", count: 12, interval: 650 },
       { type: "bomber", count: 6, interval: 900 }
@@ -510,11 +469,6 @@ const waves = [
     ], reward: 600 }
 ];
 
-
-// ======================================================
-//  INFINITE MODE SKALERING
-// ======================================================
-
 function generateInfiniteWave(waveNumber) {
   const scale = 1 + (waveNumber - 30) * 0.12;
 
@@ -532,11 +486,9 @@ function generateInfiniteWave(waveNumber) {
   };
 }
 
-
 // ======================================================
-//  BARRIKADER
+// 8. Barrikader & tårn
 // ======================================================
-
 const BARRICADE_TYPES = {
   small: { hp: 70, size: 20, cost: 20 },
   large: { hp: 180, size: 40, cost: 70 },
@@ -559,11 +511,6 @@ function placeBarricade(x, y, type) {
   money -= data.cost;
   totalMoneySpent += data.cost;
 }
-
-
-// ======================================================
-//  TÅRN + OPPGRADERINGER
-// ======================================================
 
 const TOWER_TYPES = {
   rifle: {
@@ -631,17 +578,13 @@ function upgradeTower(tower) {
   totalMoneySpent += upgradeCost;
 }
 
-
 // ======================================================
-//  FREEZE-EFFEKT
+// 9. Freeze-effekt
 // ======================================================
-
 function applySlowEffect(enemy, factor, duration) {
-  // Runners påvirkes mindre
   if (enemy.type === "runner") {
     factor = 1 - (1 - factor) * 0.5;
   }
-  // Swarm påvirkes mer
   if (enemy.type === "swarm") {
     factor = 1 - (1 - factor) * 1.5;
     if (factor < 0.2) factor = 0.2;
@@ -656,84 +599,8 @@ function applySlowEffect(enemy, factor, duration) {
 }
 
 // ======================================================
-//  TORGRIM DEFENSE — GAME.JS
-//  BLOKK 4/4 — Fiende-AI, bomber, splitter, healing,
-//              tårn-skyting, rendering, game loop
+// 10. Enemy AI & spesialoppførsel
 // ======================================================
-
-
-// ======================================================
-//  ENEMY MOVEMENT + SPECIAL ABILITIES
-// ======================================================
-
-function updateEnemyMovement(enemy, dt) {
-  const next = getNextPathPoint(enemy);
-
-  // Hvis fienden står fast for lenge → velg ny sti
-if (!enemy.lastPos) enemy.lastPos = { x: enemy.x, y: enemy.y, timer: 0 };
-
-const movedDist = Math.hypot(enemy.x - enemy.lastPos.x, enemy.y - enemy.lastPos.y);
-
-if (movedDist < 0.5) {
-  enemy.lastPos.timer += dt;
-
-  // 500 ms uten bevegelse = STUCK
-  if (enemy.lastPos.timer > 500) {
-    choosePathForEnemy(enemy); // tving ny sti
-    enemy.lastPos.timer = 0;
-  }
-} else {
-  // fienden beveger seg normalt
-  enemy.lastPos.x = enemy.x;
-  enemy.lastPos.y = enemy.y;
-  enemy.lastPos.timer = 0;
-}
-
-
-  // Nådd enden → skade spiller
-  if (!next) {
-    enemy.alive = false;
-    const dmg = getEnemyDamage(enemy.type);
-    damagePlayer(dmg);
-    return;
-  }
-
-  const dx = next.x - enemy.x;
-  const dy = next.y - enemy.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist < 1) {
-    enemy.pathIndex++;
-    return;
-  }
-
-  // Slow-effekt
-  let speed = enemy.speed;
-  if (enemy.slow) {
-    enemy.slow.remaining -= dt;
-    if (enemy.slow.remaining <= 0) {
-      enemy.slow = null;
-    } else {
-      speed *= enemy.slow.factor;
-    }
-  }
-
-  // Ghost ignorerer barrikader
-  if (enemy.type !== "ghost") {
-    updateEnemyBarricadeInteraction(enemy, dt);
-  }
-
-  const move = speed * 0.1 * dt;
-  enemy.x += (dx / dist) * move;
-  enemy.y += (dy / dist) * move;
-}
-
-
-// ======================================================
-//  SPECIAL ENEMY BEHAVIOR
-// ======================================================
-
-// Bomber → sprenger barrikader
 function bomberExplode(enemy) {
   for (let i = barricades.length - 1; i >= 0; i--) {
     const b = barricades[i];
@@ -742,13 +609,12 @@ function bomberExplode(enemy) {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist < b.size + 20) {
-      b.hp -= 200; // massiv skade
+      b.hp -= 200;
       if (b.hp <= 0) barricades.splice(i, 1);
     }
   }
 }
 
-// Splitter → spawner 2 swarm
 function spawnSplitterChildren(enemy) {
   for (let i = 0; i < 2; i++) {
     const child = {
@@ -768,7 +634,6 @@ function spawnSplitterChildren(enemy) {
   }
 }
 
-// Medic → healer nærmeste fiende
 function medicHeal(enemy, dt) {
   let closest = null;
   let closestDist = 80;
@@ -791,17 +656,65 @@ function medicHeal(enemy, dt) {
   }
 }
 
+function updateEnemyMovement(enemy, dt) {
+  const next = getNextPathPoint(enemy);
 
-// ======================================================
-//  ENEMY UPDATE LOOP
-// ======================================================
+  if (!enemy.lastPos) enemy.lastPos = { x: enemy.x, y: enemy.y, timer: 0 };
+
+  const movedDist = Math.hypot(enemy.x - enemy.lastPos.x, enemy.y - enemy.lastPos.y);
+
+  if (movedDist < 0.5) {
+    enemy.lastPos.timer += dt;
+    if (enemy.lastPos.timer > 500) {
+      choosePathForEnemy(enemy);
+      enemy.lastPos.timer = 0;
+    }
+  } else {
+    enemy.lastPos.x = enemy.x;
+    enemy.lastPos.y = enemy.y;
+    enemy.lastPos.timer = 0;
+  }
+
+  if (!next) {
+    enemy.alive = false;
+    const dmg = getEnemyDamage(enemy.type);
+    damagePlayer(dmg);
+    return;
+  }
+
+  const dx = next.x - enemy.x;
+  const dy = next.y - enemy.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < 1) {
+    enemy.pathIndex++;
+    return;
+  }
+
+  let speed = enemy.speed;
+  if (enemy.slow) {
+    enemy.slow.remaining -= dt;
+    if (enemy.slow.remaining <= 0) {
+      enemy.slow = null;
+    } else {
+      speed *= enemy.slow.factor;
+    }
+  }
+
+  if (enemy.type !== "ghost") {
+    updateEnemyBarricadeInteraction(enemy, dt);
+  }
+
+  const move = speed * 0.1 * dt;
+  enemy.x += (dx / dist) * move;
+  enemy.y += (dy / dist) * move;
+}
 
 function updateEnemies(dt) {
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
 
     if (!e.alive) {
-      // Splitter dør → spawn små fiender
       if (e.type === "splitter") {
         spawnSplitterChildren(e);
       }
@@ -810,7 +723,6 @@ function updateEnemies(dt) {
       continue;
     }
 
-    // Bomber → eksploderer når HP lav
     if (e.type === "bomber" && e.hp < e.maxHp * 0.3) {
       bomberExplode(e);
       e.alive = false;
@@ -818,7 +730,6 @@ function updateEnemies(dt) {
       continue;
     }
 
-    // Medic → healer
     if (e.type === "medic") {
       medicHeal(e, dt);
     }
@@ -827,11 +738,9 @@ function updateEnemies(dt) {
   }
 }
 
-
 // ======================================================
-//  TOWER SHOOTING + BULLETS
+// 11. Tårn-skyting & bullets
 // ======================================================
-
 function updateTowers(dt) {
   for (const t of towers) {
     t.lastShot += dt;
@@ -853,8 +762,6 @@ function updateTowers(dt) {
 
     if (target) {
       let dmg = t.damage;
-
-      // Tank tar mindre skade
       if (target.type === "tank") dmg *= 0.6;
 
       target.hp -= dmg;
@@ -905,15 +812,12 @@ function updateBullets(dt) {
   }
 }
 
-
 // ======================================================
-//  WAVE SYSTEM + INFINITE MODE
+// 12. Wave-system
 // ======================================================
-
 function startWave() {
   if (isWaveRunning) return;
 
-  // Infinite mode
   if (currentWaveIndex >= waves.length) {
     infiniteMode = true;
     const newWave = generateInfiniteWave(currentWaveIndex + 1);
@@ -988,11 +892,9 @@ function endWave() {
   currentWaveIndex++;
 }
 
-
 // ======================================================
-//  RENDERING
+// 13. Rendering
 // ======================================================
-
 function drawEnemies() {
   for (const e of enemies) {
     ctx.fillStyle = getEnemyColor(e.type);
@@ -1000,7 +902,6 @@ function drawEnemies() {
     ctx.arc(e.x, e.y, 12, 0, Math.PI * 2);
     ctx.fill();
 
-    // HP-bar
     const barWidth = 26;
     const barHeight = 4;
     const hpRatio = Math.max(0, e.hp / e.maxHp);
@@ -1013,7 +914,6 @@ function drawEnemies() {
     ctx.fillStyle = "#4caf50";
     ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
 
-    // Name tag
     ctx.fillStyle = "#fff";
     ctx.font = "10px sans-serif";
     ctx.textAlign = "center";
@@ -1040,13 +940,11 @@ function drawTowers() {
     ctx.arc(t.x, t.y, 12 + (t.level - 1) * 2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Range circle
     ctx.strokeStyle = "rgba(255,255,255,0.08)";
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Level text
     ctx.fillStyle = "#fff";
     ctx.font = "10px sans-serif";
     ctx.textAlign = "center";
@@ -1066,41 +964,66 @@ function drawBullets() {
   }
 }
 
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Sti (bakgrunn)
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 40;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  mainPath.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+
+  drawBarricades();
+  drawEnemies();
+  drawTowers();
+  drawBullets();
+}
 
 // ======================================================
-//  GAME LOOP
+// 14. Update-funksjon (spilllogikk + UI)
 // ======================================================
+function update(dt) {
+  if (playerHealth <= 0) return;
 
-// --- SIKKER PATCH: sørg for at lastTime er definert og gameLoop er korrekt ---
+  updateWaveSystem(dt);
+  updateEnemies(dt);
+  updateTowers(dt);
+  updateBullets(dt);
+
+  moneyText.textContent = Math.floor(money);
+  waveText.textContent = `Wave: ${currentWaveIndex + (isWaveRunning ? 1 : 0)}`;
+}
+
+// ======================================================
+// 15. Game loop
+// ======================================================
 let lastTime = 0;
 
-// Start loopen (cache‑buster i URL når du tester)
-requestAnimationFrame(gameLoop);
-
 function gameLoop(timestamp) {
-  // timestamp kan være undefined i noen testkall, fallback til 16ms
-  const dt = (typeof timestamp === "number" ? timestamp : performance.now()) - lastTime;
-  lastTime = (typeof timestamp === "number" ? timestamp : performance.now());
+  const now = (typeof timestamp === "number" ? timestamp : performance.now());
+  const dtRaw = now - lastTime;
+  lastTime = now;
 
-  // Begrens dt for å unngå store hopp etter fanebytte
-  const clampedDt = Math.min(Math.max(dt, 0), 100);
+  const dt = Math.min(Math.max(dtRaw, 0), 100);
 
   try {
-    update(clampedDt);
+    update(dt);
     draw();
   } catch (err) {
     console.error("Feil i gameLoop:", err);
-    // Ikke stopp loopen — prøv å fortsette
   }
 
   requestAnimationFrame(gameLoop);
 }
 
+// Start loopen
+requestAnimationFrame(gameLoop);
 
 // ======================================================
-//  CANVAS CLICK HANDLING (TÅRN + BARRIKADER + OPPGRADERING)
+// 16. Canvas click handling
 // ======================================================
-
 canvas.addEventListener("click", (e) => {
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
@@ -1109,7 +1032,6 @@ canvas.addEventListener("click", (e) => {
   const x = (e.clientX - rect.left) * scaleX;
   const y = (e.clientY - rect.top) * scaleY;
 
-  // Klikk på tårn → oppgrader
   const clickedTower = towers.find(t => {
     const dx = t.x - x;
     const dy = t.y - y;
@@ -1121,13 +1043,11 @@ canvas.addEventListener("click", (e) => {
     return;
   }
 
-  // Plasser barrikade
   if (selectedBarricadeType) {
     placeBarricade(x, y, selectedBarricadeType);
     return;
   }
 
-  // Plasser tårn
   if (selectedTowerType) {
     placeTower(x, y, selectedTowerType);
     return;
