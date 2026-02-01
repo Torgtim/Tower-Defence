@@ -293,6 +293,18 @@ function choosePathForEnemy(enemy) {
 }
 
 
+  if (closest) {
+    enemy.path = [
+      { x: enemy.x, y: enemy.y },
+      { x: closest.x, y: closest.y }
+    ];
+    enemy.pathIndex = 0;
+    enemy.forceBreak = true;
+    return;
+  }
+}
+
+
 function getNextPathPoint(enemy) {
   const path = enemy.path;
   const index = enemy.pathIndex;
